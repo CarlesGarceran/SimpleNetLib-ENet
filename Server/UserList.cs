@@ -36,7 +36,7 @@ namespace SimpleNetLib_ENet.Server
         {
             return users.Find((u) =>
             {
-                return u.enetPeer.Equals(peer);
+                return u.socket.Equals(peer);
             });
         }
 

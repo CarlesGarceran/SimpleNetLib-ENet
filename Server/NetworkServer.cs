@@ -17,7 +17,7 @@ using JSON = Newtonsoft.Json.JsonConvert;
 
 namespace SimpleNetLib_ENet.Server
 {
-    public class NetworkServer : AENetNetworkHandler
+    public class NetworkServer : ENetNetworkHandler
     {
         public NetworkServer(int listenPort, int peerLimit = 32) : base()
         {
@@ -25,6 +25,14 @@ namespace SimpleNetLib_ENet.Server
                 return;
 
             Library.Initialize();
+
+            if (User.Instance == null)
+            {
+                throw new Exception("Failed to create NetworkServer without an User");
+            }
+
+            User.Instance.SetUID("Server");
+            userList.AddUser(User.Instance);
 
             ALogHandler.Instance?.Log("################################");
             ALogHandler.Instance?.Log("##    (SNL)  SIMPLE NET LIB   ##");
@@ -39,8 +47,7 @@ namespace SimpleNetLib_ENet.Server
 
             ALogHandler.Instance?.Log("Initializing Server...");
             host.Create(address, peerLimit, 1);
-            address.SetHost("127.0.0.1");
-            localPeer = host.Connect(address);
+
             ALogHandler.Instance?.Log("Server Initialized (Listening on " + address.GetIP() + ":" + address.Port + ")");
         }
 
@@ -69,7 +76,9 @@ namespace SimpleNetLib_ENet.Server
 
             try
             {
-                PacketWrap packetWrap = Compressor.Decompress<PacketWrap>(payload);
+                PacketWrap packetWrap = Compressor.Decompress<PacketWrap>(
+                    SimpleNetLibCore.Library.Settings.PacketEncrypter.DecryptBuffer(payload)
+                );
 
                 NetworkPacket? p = packetWrap.Deserialize();
                 ServerExecute(p, @event);

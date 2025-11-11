@@ -12,20 +12,34 @@ using System.Threading.Tasks;
 
 namespace SimpleNetLib_ENet.Abstract
 {
-    public abstract class AENetNetworkHandler : ANetworkHandler
+    public abstract class ENetNetworkHandler : ANetworkHandler
     {
         public Peer localPeer { protected get; set; }
         protected Host? host;
 
         public UserList userList = new UserList();
 
-        public void SendToUser(NetworkPacket packet, Object peer, PacketFlags packetFlags = PacketFlags.None, byte channelId = 0)
+        protected ENetNetworkHandler() : base()
+        {
+            Instance = this;
+        }
+
+        public void SendToUser(NetworkPacket packet, Object _peer, PacketFlags packetFlags = PacketFlags.None, byte channelId = 0)
         {
             Packet p = new Packet();
             byte[] buffer = new PacketWrap(packet).Serialize();
             p.Create(buffer, 0, buffer.Length, packetFlags);
 
-            ((Peer)peer).Send(channelId, ref p);
+            Peer peer = ((Peer)_peer);
+
+            if (peer.State == PeerState.Connected)
+            {
+                peer.Send(channelId, ref p);
+            }
+            else
+            {
+                ALogHandler.Instance?.LogError("Attempt to send packet to disconnected peer");
+            }
         }
 
         public void SendToUser(NetworkPacket packet, User user, PacketFlags packetFlags = PacketFlags.None, byte channelId = 0)
@@ -34,7 +48,16 @@ namespace SimpleNetLib_ENet.Abstract
             byte[] buffer = new PacketWrap(packet).Serialize();
             p.Create(buffer, 0, buffer.Length, packetFlags);
 
-            ((Peer)user.enetPeer).Send(channelId, ref p);
+            Peer peer = ((Peer)user.socket);
+            
+            if(peer.State == PeerState.Connected)
+            {
+                peer.Send(channelId, ref p);
+            }
+            else
+            {
+                ALogHandler.Instance?.LogError("Attempt to send packet to disconnected peer");
+            }
         }
 
         public void SendToServer(NetworkPacket packet, PacketFlags packetFlags, byte channelID = 0)
@@ -69,6 +92,15 @@ namespace SimpleNetLib_ENet.Abstract
 
             if (host?.Service(Timeout, out netEvent) > 0)
             {
+                ALogHandler.Instance?.LogInfo("PACKET RETRIEVED");
+                ALogHandler.Instance?.LogInfo("PACKET TYPE: " + netEvent.Type);
+
+                if(netEvent.Type == EventType.Receive)
+                    ALogHandler.Instance?.LogInfo("PACKET SIZE: " + netEvent.Packet.Length);
+
+                ALogHandler.Instance?.LogInfo("PACKET OWNER: " + netEvent.Peer.IP + ":" + netEvent.Peer.Port);
+                ALogHandler.Instance?.LogInfo("PACKET CHANNEL: " + netEvent.ChannelID);
+
                 switch (netEvent.Type)
                 {
                     case EventType.Disconnect:
@@ -92,13 +124,13 @@ namespace SimpleNetLib_ENet.Abstract
             }
         }
 
-        protected override void ManualBroadcast(NetworkPacket packet, byte channelId, SimpleNetLibCore.GenericAPI.Flags.PacketFlags packetFlags)
+        protected override void ManualBroadcast(NetworkPacket packet, byte channelId, int packetFlags)
         {
             foreach (User u in userList.users)
             {
-                if (((Peer)u.enetPeer).State == PeerState.Connected)
+                if (((Peer)u.socket).State == PeerState.Connected)
                 {
-                    SendToUser(packet, u, packetFlags.ConvertTo(), channelId);
+                    SendToUser(packet, u, (PacketFlags)packetFlags, channelId);
                 }
             }
         }
@@ -113,9 +145,12 @@ namespace SimpleNetLib_ENet.Abstract
         protected override void ProcessTimeoutPacket(object e) => ProcessTimeoutPacket((Event)e);
         protected override void ProcessNetworkEvent(object e) => ProcessNetworkEvent((Event)e);
 
-        public override void SendToServer(NetworkPacket packet, SimpleNetLibCore.GenericAPI.Flags.PacketFlags packetFlags, byte channelID = 0) => SendToServer(packet, packetFlags.ConvertTo(), channelID);
-        public override void SendToUser(NetworkPacket packet, object peer, SimpleNetLibCore.GenericAPI.Flags.PacketFlags packetFlags = SimpleNetLibCore.GenericAPI.Flags.PacketFlags.None, byte channelId = 0) => SendToUser(packet, peer, packetFlags.ConvertTo(), channelId);
-        public override void SendToUser(NetworkPacket packet, User user, SimpleNetLibCore.GenericAPI.Flags.PacketFlags packetFlags = SimpleNetLibCore.GenericAPI.Flags.PacketFlags.None, byte channelId = 0) => SendToUser(packet, user, packetFlags.ConvertTo(), channelId);
+        public override void SendToServer(NetworkPacket packet, int packetFlags, byte channelID = 0) => SendToServer(packet, (PacketFlags)packetFlags, channelID);
+        public override void SendToUser(NetworkPacket packet, object peer, int packetFlags, byte channelId = 0) => SendToUser(packet, peer, (PacketFlags)packetFlags, channelId);
+        public override void SendToUser(NetworkPacket packet, User user, int packetFlags, byte channelId = 0) => SendToUser(packet, user, (PacketFlags)packetFlags, channelId);
 
+        public override void SendToServer(NetworkPacket packet, string packetFlags, byte channelID = 0) => SendToServer(packet, Enum.Parse<PacketFlags>(packetFlags), channelID);
+        public override void SendToUser(NetworkPacket packet, object peer, string packetFlags, byte channelId = 0) => SendToUser(packet, peer, Enum.Parse<PacketFlags>(packetFlags), channelId);
+        public override void SendToUser(NetworkPacket packet, User user, string packetFlags, byte channelId = 0) => SendToUser(packet, user, Enum.Parse<PacketFlags>(packetFlags), channelId);
     }
 }

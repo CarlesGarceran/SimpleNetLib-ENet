@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SimpleNetLib-ENet")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+08d3a9ebbd844aa415ee3a724d7c2950b122055f")]
 [assembly: System.Reflection.AssemblyProductAttribute("SimpleNetLib-ENet")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SimpleNetLib-ENet")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

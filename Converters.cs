@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SimpleNetLib_ENet.Wrapper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,8 @@ namespace SimpleNetLib_ENet
 {
     public static class Converters
     {
-        public static SimpleNetLib_ENet.Wrapper.PacketFlags ConvertTo(this SimpleNetLibCore.GenericAPI.Flags.PacketFlags flags)
+        /*
+        public static SimpleNetLib_ENet.Wrapper.PacketFlags ConvertTo(this PacketFlags flags)
         {
             string flagName = flags.ToString();
             return Enum.Parse<SimpleNetLib_ENet.Wrapper.PacketFlags>(flagName);
@@ -19,5 +21,6 @@ namespace SimpleNetLib_ENet
             string flagName = flags.ToString();
             return Enum.Parse<SimpleNetLibCore.GenericAPI.Flags.PacketFlags>(flagName);
         }
+        */
     }
 }

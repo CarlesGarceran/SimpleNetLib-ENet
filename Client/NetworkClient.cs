@@ -1,5 +1,4 @@
 ﻿using SimpleNetLibCore.Abstractions;
-using SimpleNetLibCore.Local;
 using SimpleNetLibCore.Packet;
 using SimpleNetLibCore.Packet.Generic;
 using SimpleNetLibCore.Packet.LowLevel;
@@ -16,7 +15,7 @@ using SimpleNetLib_ENet.Abstract;
 
 namespace SimpleNetLib_ENet.Client
 {
-    public class NetworkClient : AENetNetworkHandler
+    public class NetworkClient : ENetNetworkHandler
     {
         public NetworkClient(string address, int port) : base()
         {
@@ -33,6 +32,7 @@ namespace SimpleNetLib_ENet.Client
             this.IsServer = false;
 
             host = new Host();
+
             Address addr = new Address();
             addr.SetHost(address);
             addr.Port = (ushort)port;
@@ -42,8 +42,7 @@ namespace SimpleNetLib_ENet.Client
             host.Create();
 
             localPeer = host.Connect(addr);
-
-            LocalUser.Instance.peer = localPeer;
+            User.Instance.SetSocket(localPeer);
         }
 
         protected override void ProcessDisconnectionPacket(Event e)
@@ -64,21 +63,23 @@ namespace SimpleNetLib_ENet.Client
 
             try
             {
-                PacketWrap packetWrap = Compressor.Decompress<PacketWrap>(payload);
+                PacketWrap packetWrap = Compressor.Decompress<PacketWrap>(
+                    SimpleNetLibCore.Library.Settings.PacketEncrypter.DecryptBuffer(payload)
+                );
 
                 NetworkPacket p = packetWrap.Deserialize();
                 this.ClientExecute(p, @event);
             }
             catch (Exception e)
             {
-
+                ALogHandler.Instance?.LogError(e.Message);
             }
         }
 
         protected override void OnConnected(Event @event)
         {
             ALogHandler.Instance?.Log("Client Initialized (Connected to " + @event.Peer.IP + ":" + @event.Peer.Port + ")");
-            PlayerAdded playerAddedPacket = new PlayerAdded(LocalUser.Instance.userName, LocalUser.Instance.uid);
+            PlayerAdded playerAddedPacket = new PlayerAdded();
             this.SendToServer(playerAddedPacket, PacketFlags.Reliable);
         }
     }
